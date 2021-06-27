@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8"/>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"/>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+
+	<!--Website Icons and CSS-->
+	<link rel="apple-touch-icon" sizes="180x180" href="resources/images/G3P 3D REN Filled Fixed Transparent.png"/>
+	<link rel="apple-touch-icon" sizes="167x167" href="resources/images/medium.png"/>
+	<link rel="icon" type="image/png" href="resources/images/favicon_large.png" sizes="64x64"/>
+	<link rel="icon" type="image/png" href="resources/images/favicon_medium.png" sizes="32x32"/>
+	<link rel="apple-touch-icon" sizes="152x152" href="resources/images/small.png"/>
+	<link rel="icon" type="image/png" href="resources/images/favicon_small.png" sizes="16x16"/>
+	<link rel="stylesheet" type="text/css" media="all" href="resources/consolidated.css"/>
+
+	<!--Title-->
+	<title>Yihong Xu CS4731 Project 2</title>
+
+	<!--Vertex Shader-->
+	<script id="vShader" type="x-shader/x-vertex">
+		attribute vec4 vPosition, vNormal;
+		uniform vec4 ambientProduct, diffuseProduct, specularProduct, lightPosition;
+		uniform float shininess;
+		uniform mat4 modelViewMatrix, projectionMatrix;
+		varying vec4 fColor;
+		uniform bool doWireframe;
+
+		void main() {
+			if (!doWireframe) {
+				vec3 pos = (modelViewMatrix * vPosition).xyz;
+				vec3 L = normalize(lightPosition.xyz - pos);
+
+				vec3 N = normalize(modelViewMatrix * vNormal).xyz;
+
+				vec3 V = normalize(-pos);
+				vec3 R = (2.0 * dot(L, N) * N) - L;
+
+				vec4 ambient = ambientProduct;
+				vec4 diffuse = diffuseProduct * dot(L, N);
+				vec4 specular = specularProduct * pow(max(dot(V, R), 0.0), shininess);
+
+				fColor = diffuse + specular + ambient;
+				fColor.a = 1.0;
+			} else fColor = vec4(1.0, 1.0, 1.0, 1.0);
+
+			gl_Position = projectionMatrix * modelViewMatrix * vPosition;
+		}
+	</script>
+
+	<!--Vertex Shader - Phong-->
+	<script id="vShaderPhong" type="x-shader/x-vertex">
+		attribute vec4 vPosition, vNormal;
+		uniform vec4 lightPosition;
+		uniform mat4 modelViewMatrix, projectionMatrix;
+		uniform bool doWireframe;
+		varying vec3 L, N, V;
+
+		void main() {
+			if (!doWireframe) {
+				vec3 pos = (modelViewMatrix * vPosition).xyz;
+				L = normalize(lightPosition.xyz - pos);
+				N = normalize(modelViewMatrix * vNormal).xyz;
+				V = normalize(-pos);
+			}
+
+			gl_Position = projectionMatrix * modelViewMatrix * vPosition;
+		}
+	</script>
+
+	<!--Fragment Shader-->
+	<script id="fShader" type="x-shader/x-fragment">
+		precision mediump float;
+		varying vec4 fColor;
+
+		void main() {
+			gl_FragColor = fColor;
+		}
+	</script>
+
+	<!--Fragment Shader - Phong-->
+	<script id="fShaderPhong" type="x-shader/x-fragment">
+		precision mediump float;
+		uniform vec4 ambientProduct, diffuseProduct, specularProduct;
+		uniform float shininess;
+		varying vec3 L, N, V;
+		uniform bool doWireframe;
+
+		void main() {
+			vec4 fColor;
+
+			if (!doWireframe) {
+				vec3 R = (2.0 * dot(L, N) * N) - L;
+				vec4 diffuse = diffuseProduct * dot(L, N);
+				vec4 ambient = ambientProduct;
+				vec4 specular = specularProduct * pow(max(dot(V, R), 0.0), shininess);
+
+				fColor = diffuse + specular + ambient;
+				fColor.a = 1.0;
+			} else fColor = vec4(1.0, 1.0, 1.0, 1.0);
+
+			gl_FragColor = fColor;
+		}
+	</script>
+
+	<script src="application.js"></script>
+
+</head>
+
+<body>
+
+<!--Logo-->
+<nav class="navbar navbar-expand-lg">
+	<div class="container">
+		<a class="navbar-brand" href="https://anrong.online/">
+			<img src="resources/images/G3P 3D REN Filled Fixed Transparent.png" width="64" height="64" alt="Yihong Xu"/>
+			<span class="navbar-title">Yihong Xu</span>
+		</a>
+	</div>
+</nav>
+
+<!--Hero-->
+<header class="hero" id="hero">
+	<div class="hero-background"></div>
+	<div class="hero-overlay"></div>
+	<h1 class="hero-title">
+		Yihong Xu
+		<em>CS4731 Project 2</em>
+	</h1>
+</header>
+
+<!--Contents-->
+<div class="content">
+	<section class="main" style="position: relative">
+		<div class="container">
+			<div class="row">
+				<div class="col-sm-12 main">
+					<h1 id="application">Application</h1>
+
+					<!--WebGL Application-->
+					<canvas id="webgl" width="666" height="666" class="rounded"
+					        style="margin: auto; display: block; border: 1px solid black">
+						Please use a browser that supports the "canvas" tag.
+					</canvas>
+
+					<p></p>
+
+					<!--Control Bar-->
+					<h6>Controls</h6>
+
+					<p style="text-align: center">
+						<label>
+							Ball Color:
+							<input type="color" id="ballColor">
+						</label>
+						<label>
+							<input type="checkbox" id="wireframeCheckbox" onchange="shapeChange()">
+							Wireframe Mode
+						</label>
+						<label>
+							<input type="checkbox" id="animationCheckbox"
+							       onchange="render()">
+							Animation Mode
+						</label>
+						<label>
+							<input type="checkbox" id="phongCheckbox"
+							       onchange="shaderChange()">
+							Phong Lighting Mode
+						</label>
+						<label>
+							<input type="checkbox" id="sphereOnlyCheckBox"
+							       onchange="render()">
+							Sphere Only Mode
+						</label>
+					</p>
+					<p style="text-align: center">
+						<label>
+							Animation Speed:
+							<input type="range" id="animationSpeed" min="1" max="10"
+							       step="1" value="1">
+						</label>
+						<input type="button" id="animationSpeedMinus" value="-"
+						       onclick="animationSpeed.value--">
+						<input type="button" id="animationSpeedPlus+" value="+"
+						       onclick="animationSpeed.value++">
+						<input type="button" id="animationSpeedReset" value="Reset"
+						       onclick="animationSpeed.value=1">
+					</p>
+					<p style="text-align: center">
+						<label>
+							Number of times to subdivide sphere:
+							<input type="range" id="sphereLOD" min="1" max="8"
+							       step="1" value="7" oninput="shapeChange()">
+						</label>
+						<input type="button" id="sphereLODMinus" value="-"
+						       onclick="sphereLOD.value--;shapeChange()">
+						<input type="button" id="sphereLODPlus+" value="+"
+						       onclick="sphereLOD.value++;shapeChange()">
+						<input type="button" id="sphereLODReset" value="Reset"
+						       onclick="sphereLOD.value=7;shapeChange()">
+					</p>
+					<p style="text-align: center">
+						<label>
+							Number of times to subdivide path:
+							<input type="range" id="pathLOD" min="0" max="8"
+							       step="1" value="8" oninput="shapeChange()">
+						</label>
+						<input type="button" id="pathLODMinus" value="-"
+						       onclick="pathLOD.value--;shapeChange()">
+						<input type="button" id="pathLODPlus+" value="+"
+						       onclick="pathLOD.value++;shapeChange()">
+						<input type="button" id="pathLODReset" value="Reset"
+						       onclick="pathLOD.value=8;shapeChange()">
+					</p>
+					<p style="text-align: center">
+						<label id="fov">
+							Field of View:
+							<input type="range" id="fieldOfViewY" min="0" max="180"
+							       step="1" value="50" oninput="if (!animationCheckbox.checked) render()">
+						</label>
+						<input type="button" id="fieldOfViewYReset" value="R"
+						       onclick="fieldOfViewY.value=50;if (!animationCheckbox.checked) render()">
+						<label>
+							Camera Distance:
+							<input type="range" id="cameraDistance" min="-30" max="20"
+							       value="7" oninput="if (!animationCheckbox.checked) render()">
+						</label>
+						<input type="button" id="cameraDistanceReset" value="R"
+						       onclick="cameraDistance.value=7;if (!animationCheckbox.checked) render()">
+						<label>
+							Perspective Far:
+							<input type="range" id="perspectiveFar" min="0" max="100"
+							       value="30" oninput="if (!animationCheckbox.checked) render()">
+						</label>
+						<input type="button" id="farReset" value="R"
+						       onclick="perspectiveFar.value=30;if (!animationCheckbox.checked) render()">
+					</p>
+
+					<!--Debug Information Table-->
+					<h6>Debug Information</h6>
+
+					<table style="width: 100%; text-align: center">
+						<tr>
+							<th>Data</th>
+							<th>Value</th>
+						</tr>
+						<tr>
+							<td>Tick Value</td>
+							<td id="tickValue">0</td>
+						</tr>
+						<tr>
+							<td>Adjusted Tick Value</td>
+							<td id="adjustedTickValue">0</td>
+						</tr>
+						<tr>
+							<td>Line Composition</td>
+							<td id="lineComposition">0</td>
+						</tr>
+					</table>
+
+					<p></p>
+
+					<!--Keyboard Shortcuts Table-->
+					<h6>Keyboard Shortcuts</h6>
+
+					<table style="width: 100%; text-align: center">
+						<tr>
+							<th>Operation</th>
+							<th>Primary</th>
+							<th>Secondary</th>
+						</tr>
+						<tr>
+							<td>pathLOD--</td>
+							<td>J</td>
+							<td>-</td>
+						</tr>
+						<tr>
+							<td>pathLOD++</td>
+							<td>I</td>
+							<td>=</td>
+						</tr>
+						<tr>
+							<td>sphereLOD--</td>
+							<td>Q</td>
+							<td>_</td>
+						</tr>
+						<tr>
+							<td>sphereLOD++</td>
+							<td>E</td>
+							<td>+</td>
+						</tr>
+						<tr>
+							<td>Toggle Animation</td>
+							<td>A</td>
+						</tr>
+						<tr>
+							<td>Change Animation Speed from 1x to 10x</td>
+							<td>number 1-0</td>
+						</tr>
+						<tr>
+							<td>Toggle Between Wireframe and Lit Modes</td>
+							<td>M</td>
+						</tr>
+						<tr>
+							<td>Toggle Between Gouraud Shading and Phong Shading</td>
+							<td>L</td>
+						</tr>
+						<tr>
+							<td>Super Reset</td>
+							<td>R</td>
+						</tr>
+					</table>
+
+					<!--Special Features List-->
+					<h2 id="specialfeatures">Special Features</h2>
+
+					<ul>
+						<li>Hyper Smooth and Quick Load:
+							<ul>
+								<li>Does all calculation one time and one time only (on page load)</li>
+								<li>Results in super smooth animation and mode/subdivision switching</li>
+								<li>Occupies a constant amount of RAM with much less I/O (around 98% less memory write
+									for 1 minute of using)
+								</li>
+								<li>No in-between: If your computer can run it, it can run the entirety of it</li>
+								<li>No animation jumping what so ever (recreated animation system from the demo video,
+									but adjusted to eliminate jumping)
+								</li>
+								<li>Optimized animation frame rate - should be able to render at maximum FPS even on
+									weaker platforms
+								</li>
+							</ul>
+						</li>
+						<li>Change the sphere's color in the control section</li>
+						<li>Change the animation's speed from 1x to 10x in the control section</li>
+						<li>Change the y axis FOV from 0 to 180 in the control section</li>
+						<li>Change the camera's distance from -25 to 25 in the control section</li>
+						<li>Change the perspective's far field from 0 to 100 in the control section</li>
+						<li>Sphere Only and The Blue:
+							<ul>
+								<li>There exist an issue that weird navy shades appear on the sphere and we don't know
+									why. After experimenting, we know that it is relative to the camera.
+								</li>
+								<li>The default camera position pur the camera at a certain distance from the sphere
+									that minimizes the effect of the blue.
+								</li>
+								<li>The sphere only mode was created to show only the sphere with no animation, this
+									viewing mode does not suffer from the blue at all.
+								</li>
+							</ul>
+						</li>
+						<li>"Super Reset": Pressing the R key resets the wireframe, animation, lighting mode, sphere
+							only mode, animation speed, sphere and path subdivision level, field of view, camera
+							distance, perspective far, ball color and animation position information.
+						</li>
+						<li>This Page:
+							<ul>
+								<li>Control Section: toggle functionalities and control view, ball color, lighting modes
+									and objects
+								</li>
+								<li>Debug Section:
+									<ul>
+										<li>Tick Value: animation value from 0 to 1535 that represents on what part
+											should the sphere be
+										</li>
+										<li>Adjusted Tick Value: adjusted Tick to offset slopped starting points of
+											different subdivision numbers
+										</li>
+										<li>Line Composition: for animation, shows the composition of the point that the
+											sphere is currently on
+										</li>
+									</ul>
+								</li>
+								<li>Shortcuts Section: Displays list of operations and corresponding primary and
+									secondary keyboard shortcuts
+								</li>
+								<li>Feature List: Displays list of special features</li>
+								<li>Simple and legible user interface design</li>
+							</ul>
+						</li>
+						<li>There defiantly are others but I lost track</li>
+					</ul>
+
+					<blockquote>
+						Thanks!
+					</blockquote>
+				</div>
+			</div>
+		</div>
+	</section>
+</div>
+
+<!--Footer-->
+<div class="footer">
+	<div class="container">
+		<div class="row">
+			<div class="col">
+				Yihong Xu
+			</div>
+		</div>
+		<div class="row">
+			<div class="col">
+				<a href="mailto:yxu12@wpi.edu">Contact Me</a>
+			</div>
+		</div>
+	</div>
+</div>
+<script type="text/javascript" src="resources/js/main.js"></script>
+</body>
+
+</html>
