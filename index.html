@@ -17,8 +17,8 @@
 	<!--Title-->
 	<title>Yihong Xu CS4731 Project 2</title>
 
-	<!--Vertex Shader-->
-	<script id="vShader" type="x-shader/x-vertex">
+	<!--Vertex Shader - Gouraud-->
+	<script id="vShaderGouraud" type="x-shader/x-vertex">
 		attribute vec4 vPosition, vNormal;
 		uniform vec4 ambientProduct, diffuseProduct, specularProduct, lightPosition;
 		uniform float shininess;
@@ -48,8 +48,8 @@
 		}
 	</script>
 
-	<!--Vertex Shader - Phong-->
-	<script id="vShaderPhong" type="x-shader/x-vertex">
+	<!--Vertex Shader-->
+	<script id="vShader" type="x-shader/x-vertex">
 		attribute vec4 vPosition, vNormal;
 		uniform vec4 lightPosition;
 		uniform mat4 modelViewMatrix, projectionMatrix;
@@ -68,8 +68,8 @@
 		}
 	</script>
 
-	<!--Fragment Shader-->
-	<script id="fShader" type="x-shader/x-fragment">
+	<!--Fragment Shader - Gouraud-->
+	<script id="fShaderGouraud" type="x-shader/x-fragment">
 		precision mediump float;
 		varying vec4 fColor;
 
@@ -78,8 +78,8 @@
 		}
 	</script>
 
-	<!--Fragment Shader - Phong-->
-	<script id="fShaderPhong" type="x-shader/x-fragment">
+	<!--Fragment Shader-->
+	<script id="fShader" type="x-shader/x-fragment">
 		precision mediump float;
 		uniform vec4 ambientProduct, diffuseProduct, specularProduct;
 		uniform float shininess;
