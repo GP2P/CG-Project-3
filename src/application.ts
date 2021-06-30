@@ -14,6 +14,8 @@ let offset: number[];
 // Controls
 let animationSpeed: HTMLInputElement;
 let animationCheckbox: HTMLInputElement;
+let lampLightCheckbox: HTMLInputElement;
+let invertCheckbox: HTMLInputElement;
 let phongCheckbox: HTMLInputElement;
 
 // Animation: Degree to rotate about the Y axis
@@ -28,13 +30,14 @@ window.onload = async function () {
 	canvas = <HTMLCanvasElement>document.getElementById("webgl");
 	animationSpeed = <HTMLInputElement>document.getElementById("animationSpeed");
 	animationCheckbox = <HTMLInputElement>document.getElementById("animationCheckbox");
+	lampLightCheckbox = <HTMLInputElement>document.getElementById("lampLightCheckbox");
+	invertCheckbox = <HTMLInputElement>document.getElementById("invertCheckbox");
 	phongCheckbox = <HTMLInputElement>document.getElementById("phongCheckbox");
 
 	gl = WebGLUtils.setupWebGL(canvas, null);
 	if (!gl) alert("WebGL isn't available");
 
 	gl.viewport(0, 0, canvas.width, canvas.height);
-	gl.clearColor(1, 1, 1, 1);
 
 	gl.enable(gl.DEPTH_TEST);
 
@@ -42,6 +45,10 @@ window.onload = async function () {
 }
 
 async function readIn() {
+	if (invertCheckbox.checked)
+		gl.clearColor(1, 1, 1, 1);
+	else
+		gl.clearColor(0, 0, 0, 1);
 	// Get info from link
 	// - Read .mtl before .obj
 	// - Keep temporary list of materials for the object
@@ -56,7 +63,7 @@ async function readIn() {
 
 	offset = [2.9, -0.2, 0];
 	await parseObject("car");
-	offset = [0, 0, 5];
+	offset = [0, 0, 0];
 	await parseObject("lamp");
 	offset = [0, 0, -4.5];
 	await parseObject("stopsign");
@@ -97,12 +104,12 @@ async function parseObject(fileName: string) {
 					let segs = thisLine.split(" ");
 					switch (segs[0]) {
 						case "Kd":
-							if ((<HTMLInputElement>document.getElementById("invertCheckbox")).checked)
-								material[1] = [+segs[1], +segs[2], +segs[3], 1];
-							else material[1] = [1 - +segs[1], 1 - +segs[2], 1 - +segs[3], 1];
+							if (invertCheckbox.checked)
+								material[1] = [1 - +segs[1], 1 - +segs[2], 1 - +segs[3], 1];
+							else material[1] = [+segs[1], +segs[2], +segs[3], 1];
 							break;
 						case "Ks":
-							if ((<HTMLInputElement>document.getElementById("invertCheckbox")).checked)
+							if (invertCheckbox.checked)
 								material[2] = [+segs[1], +segs[2], +segs[3], 1];
 							else material[2] = [1 - +segs[1], 1 - +segs[2], 1 - +segs[3], 1];
 							break;
@@ -227,8 +234,8 @@ function shaderChange() {
 	gl.enableVertexAttribArray(materialSpecularPosition);
 
 	// Light Calculation
-	gl.uniform4fv(gl.getUniformLocation(program, "lightPosition"), [0, 4, 0, 1]);
-	gl.uniform4fv(gl.getUniformLocation(program, "lightAmbient"), [0.5, 0.5, 0.5, 1]);
+	gl.uniform4fv(gl.getUniformLocation(program, "lightPosition"), [0, 5, 0, 1]);
+	gl.uniform4fv(gl.getUniformLocation(program, "lightAmbient"), [0.3, 0.3, 0.3, 1]);
 	gl.uniform4fv(gl.getUniformLocation(program, "lightDiffuse"), [1, 1, 1, 1]);
 	gl.uniform4fv(gl.getUniformLocation(program, "lightSpecular"), [1, 1, 1, 1]);
 	gl.uniform1f(gl.getUniformLocation(program, "shininess"), 20);
@@ -256,7 +263,7 @@ function render() {
 	gl.uniformMatrix4fv(gl.getUniformLocation(program, "modelViewMatrix"), false, flatten(viewMatrix));
 
 	// Toggle lamp light
-	if ((<HTMLInputElement>document.getElementById("lampLightCheckbox")).checked)
+	if (lampLightCheckbox.checked)
 		gl.uniform1f(gl.getUniformLocation(program, "lightOn"), 1);
 	else gl.uniform1f(gl.getUniformLocation(program, "lightOn"), 0);
 
@@ -278,45 +285,41 @@ function render() {
 // Keyboard Shortcuts
 window.onkeypress = function (event: { key: any; }) {
 	switch (event.key) {
-		// Toggle between Gouraud shading and Phong shading
-		case "l":
-		case "L":
-			phongCheckbox.checked = !phongCheckbox.checked;
-			shaderChange();
-			break;
 		// Toggle animation
 		case "c":
 		case "C":
 			animationCheckbox.checked = !animationCheckbox.checked;
 			render();
 			break;
+		// Toggle lamp light
+		case "l":
+		case "L":
+			lampLightCheckbox.checked = !lampLightCheckbox.checked;
+			if (!animationCheckbox.checked) render();
+			break;
+		// Toggle X-ray
+		case "x":
+		case "X":
+			invertCheckbox.checked = !invertCheckbox.checked;
+			readIn();
+			break;
+		// Toggle between Gouraud shading and Phong shading
+		case "q":
+		case "Q":
+			phongCheckbox.checked = !phongCheckbox.checked;
+			shaderChange();
+			break;
 		// Change animation speed with numbers
 		case "1":
-			animationSpeed.value = "1";
-			break;
 		case "2":
-			animationSpeed.value = "2";
-			break;
 		case "3":
-			animationSpeed.value = "3";
-			break;
 		case "4":
-			animationSpeed.value = "4";
-			break;
 		case "5":
-			animationSpeed.value = "5";
-			break;
 		case "6":
-			animationSpeed.value = "6";
-			break;
 		case "7":
-			animationSpeed.value = "7";
-			break;
 		case "8":
-			animationSpeed.value = "8";
-			break;
 		case "9":
-			animationSpeed.value = "9";
+			animationSpeed.value = event.key;
 			break;
 		case "0":
 			animationSpeed.value = "10";
