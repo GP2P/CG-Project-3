@@ -19,49 +19,49 @@
 
 	<!--Vertex Shader - Gouraud-->
 	<script id="vShaderGouraud" type="x-shader/x-vertex">
-		attribute vec4 vPosition, vNormal;
-		uniform vec4 ambientProduct, diffuseProduct, specularProduct, lightPosition;
+		attribute vec4 vPosition, vNormal, materialDiffuse, materialSpecular;
+		uniform vec4 lightPosition, lightAmbient, lightDiffuse, lightSpecular;
 		uniform float shininess;
 		uniform mat4 modelViewMatrix, projectionMatrix;
 		varying vec4 fColor;
-		uniform bool doWireframe;
+		uniform bool lightOn;
 
 		void main() {
-			if (!doWireframe) {
+			if (lightOn) {
 				vec3 pos = (modelViewMatrix * vPosition).xyz;
-				vec3 L = normalize(lightPosition.xyz - pos);
-
+				vec3 L = normalize((modelViewMatrix * lightPosition).xyz - pos);
 				vec3 N = normalize(modelViewMatrix * vNormal).xyz;
-
 				vec3 V = normalize(-pos);
 				vec3 R = (2.0 * dot(L, N) * N) - L;
+				vec4 diffuse = (lightDiffuse * materialDiffuse) * dot(L, N);
+				vec4 specular = (lightSpecular * materialSpecular) * pow(max(dot(V, R), 0.0), shininess);
 
-				vec4 ambient = ambientProduct;
-				vec4 diffuse = diffuseProduct * dot(L, N);
-				vec4 specular = specularProduct * pow(max(dot(V, R), 0.0), shininess);
-
-				fColor = diffuse + specular + ambient;
-				fColor.a = 1.0;
-			} else fColor = vec4(1.0, 1.0, 1.0, 1.0);
+				fColor = diffuse + specular + lightAmbient * materialDiffuse;
+			} else fColor = lightAmbient * materialDiffuse;
+			fColor.a = 1.0;
 
 			gl_Position = projectionMatrix * modelViewMatrix * vPosition;
 		}
 	</script>
 
-	<!--Vertex Shader-->
-	<script id="vShader" type="x-shader/x-vertex">
-		attribute vec4 vPosition, vNormal;
+	<!--Vertex Shader- Phong-->
+	<script id="vShaderPhong" type="x-shader/x-vertex">
+		attribute vec4 vPosition, vNormal, materialDiffuse, materialSpecular;
 		uniform vec4 lightPosition;
 		uniform mat4 modelViewMatrix, projectionMatrix;
-		uniform bool doWireframe;
 		varying vec3 L, N, V;
+		varying vec4 materialDiffuseF, materialSpecularF;
+		uniform bool lightOn;
 
 		void main() {
-			if (!doWireframe) {
+
+			if (lightOn) {
 				vec3 pos = (modelViewMatrix * vPosition).xyz;
-				L = normalize(lightPosition.xyz - pos);
+				L = normalize((modelViewMatrix * lightPosition).xyz - pos);
 				N = normalize(modelViewMatrix * vNormal).xyz;
 				V = normalize(-pos);
+				materialDiffuseF = materialDiffuse;
+				materialSpecularF = materialSpecular;
 			}
 
 			gl_Position = projectionMatrix * modelViewMatrix * vPosition;
@@ -78,26 +78,26 @@
 		}
 	</script>
 
-	<!--Fragment Shader-->
-	<script id="fShader" type="x-shader/x-fragment">
+	<!--Fragment Shader - Phong-->
+	<script id="fShaderPhong" type="x-shader/x-fragment">
 		precision mediump float;
-		uniform vec4 ambientProduct, diffuseProduct, specularProduct;
+		uniform vec4 lightAmbient, lightDiffuse, lightSpecular;
 		uniform float shininess;
 		varying vec3 L, N, V;
-		uniform bool doWireframe;
+		varying vec4 materialDiffuseF, materialSpecularF;
+		uniform bool lightOn;
 
 		void main() {
 			vec4 fColor;
 
-			if (!doWireframe) {
+			if (lightOn) {
 				vec3 R = (2.0 * dot(L, N) * N) - L;
-				vec4 diffuse = diffuseProduct * dot(L, N);
-				vec4 ambient = ambientProduct;
-				vec4 specular = specularProduct * pow(max(dot(V, R), 0.0), shininess);
+				vec4 diffuse = (lightDiffuse * materialDiffuseF) * dot(L, N);
+				vec4 specular = (lightSpecular * materialSpecularF) * pow(max(dot(V, R), 0.0), shininess);
 
-				fColor = diffuse + specular + ambient;
-				fColor.a = 1.0;
-			} else fColor = vec4(1.0, 1.0, 1.0, 1.0);
+				fColor = diffuse + specular + lightAmbient * materialDiffuseF;
+			} else fColor = lightAmbient * materialDiffuseF;
+			fColor.a = 1.0;
 
 			gl_FragColor = fColor;
 		}
@@ -154,23 +154,24 @@
 							<input type="color" id="ballColor">
 						</label>
 						<label>
-							<input type="checkbox" id="wireframeCheckbox" onchange="shapeChange()">
-							Wireframe Mode
-						</label>
-						<label>
 							<input type="checkbox" id="animationCheckbox"
 							       onchange="render()">
 							Animation Mode
 						</label>
 						<label>
-							<input type="checkbox" id="phongCheckbox"
+							<input type="checkbox" id="lampLightCheckbox" checked
+							       onchange="if (!animationCheckbox.checked) render()">
+							Lamp Light
+						</label>
+						<label>
+							<input type="checkbox" id="phongCheckbox" checked
 							       onchange="shaderChange()">
 							Phong Lighting Mode
 						</label>
 						<label>
-							<input type="checkbox" id="sphereOnlyCheckBox"
-							       onchange="render()">
-							Sphere Only Mode
+							<input type="checkbox" id="invertCheckbox"
+							       onchange="readIn()">
+							X-ray (invert colors, I liked this more)
 						</label>
 					</p>
 					<p style="text-align: center">
@@ -185,32 +186,6 @@
 						       onclick="animationSpeed.value++">
 						<input type="button" id="animationSpeedReset" value="Reset"
 						       onclick="animationSpeed.value=1">
-					</p>
-					<p style="text-align: center">
-						<label>
-							Number of times to subdivide sphere:
-							<input type="range" id="sphereLOD" min="1" max="8"
-							       step="1" value="7" oninput="shapeChange()">
-						</label>
-						<input type="button" id="sphereLODMinus" value="-"
-						       onclick="sphereLOD.value--;shapeChange()">
-						<input type="button" id="sphereLODPlus+" value="+"
-						       onclick="sphereLOD.value++;shapeChange()">
-						<input type="button" id="sphereLODReset" value="Reset"
-						       onclick="sphereLOD.value=7;shapeChange()">
-					</p>
-					<p style="text-align: center">
-						<label>
-							Number of times to subdivide path:
-							<input type="range" id="pathLOD" min="0" max="8"
-							       step="1" value="8" oninput="shapeChange()">
-						</label>
-						<input type="button" id="pathLODMinus" value="-"
-						       onclick="pathLOD.value--;shapeChange()">
-						<input type="button" id="pathLODPlus+" value="+"
-						       onclick="pathLOD.value++;shapeChange()">
-						<input type="button" id="pathLODReset" value="Reset"
-						       onclick="pathLOD.value=8;shapeChange()">
 					</p>
 					<p style="text-align: center">
 						<label id="fov">
@@ -245,16 +220,12 @@
 							<th>Value</th>
 						</tr>
 						<tr>
-							<td>Tick Value</td>
-							<td id="tickValue">0</td>
+							<td>Animation Degree</td>
+							<td id="animationDegree">0</td>
 						</tr>
 						<tr>
-							<td>Adjusted Tick Value</td>
-							<td id="adjustedTickValue">0</td>
-						</tr>
-						<tr>
-							<td>Line Composition</td>
-							<td id="lineComposition">0</td>
+							<td>Animation Variance</td>
+							<td id="animationVariance">0</td>
 						</tr>
 					</table>
 
@@ -296,10 +267,6 @@
 						<tr>
 							<td>Change Animation Speed from 1x to 10x</td>
 							<td>number 1-0</td>
-						</tr>
-						<tr>
-							<td>Toggle Between Wireframe and Lit Modes</td>
-							<td>M</td>
 						</tr>
 						<tr>
 							<td>Toggle Between Gouraud Shading and Phong Shading</td>
@@ -377,6 +344,11 @@
 								<li>Feature List: Displays list of special features</li>
 								<li>Simple and legible user interface design</li>
 							</ul>
+						</li>
+						<li>Note: the loading of .mtl files does not get affected by what was stored in the mtllib
+							section of the .obj file, for example, if street.obj's mtllib became streetee.mtl, the
+							program will still proceed to try load street.mtl from the server. This is to save load
+							time.
 						</li>
 						<li>There defiantly are others but I lost track</li>
 					</ul>
