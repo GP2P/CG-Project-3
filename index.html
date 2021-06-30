@@ -60,9 +60,9 @@
 				L = normalize((modelViewMatrix * lightPosition).xyz - pos);
 				N = normalize(modelViewMatrix * vNormal).xyz;
 				V = normalize(-pos);
-				materialDiffuseF = materialDiffuse;
 				materialSpecularF = materialSpecular;
 			}
+			materialDiffuseF = materialDiffuse;
 
 			gl_Position = projectionMatrix * modelViewMatrix * vPosition;
 		}
