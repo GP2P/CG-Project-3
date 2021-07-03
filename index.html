@@ -15,16 +15,18 @@
 	<link rel="stylesheet" type="text/css" media="all" href="resources/consolidated.css"/>
 
 	<!--Title-->
-	<title>Yihong Xu CS4731 Project 2</title>
+	<title>Yihong Xu CS4731 Project 3</title>
 
 	<!--Vertex Shader - Gouraud-->
 	<script id="vShaderGouraud" type="x-shader/x-vertex">
 		attribute vec4 vPosition, vNormal, materialDiffuse, materialSpecular;
+		attribute vec2 vTexCoord;
 		uniform vec4 lightPosition, lightAmbient, lightDiffuse, lightSpecular;
 		uniform float shininess;
 		uniform mat4 modelViewMatrix, projectionMatrix;
 		varying vec4 fColor;
 		uniform bool lightOn;
+		varying vec2 vTexCoordF;
 
 		void main() {
 			if (lightOn) {
@@ -40,6 +42,8 @@
 			} else fColor = lightAmbient * materialDiffuse;
 			fColor.a = 1.0;
 
+			vTexCoordF = vTexCoord;
+
 			gl_Position = projectionMatrix * modelViewMatrix * vPosition;
 		}
 	</script>
@@ -47,11 +51,13 @@
 	<!--Vertex Shader- Phong-->
 	<script id="vShaderPhong" type="x-shader/x-vertex">
 		attribute vec4 vPosition, vNormal, materialDiffuse, materialSpecular;
+		attribute vec2 vTexCoord;
 		uniform vec4 lightPosition;
 		uniform mat4 modelViewMatrix, projectionMatrix;
 		varying vec3 L, N, V;
 		varying vec4 materialDiffuseF, materialSpecularF;
 		uniform bool lightOn;
+		varying vec2 vTexCoordF;
 
 		void main() {
 
@@ -64,6 +70,8 @@
 			}
 			materialDiffuseF = materialDiffuse;
 
+			vTexCoordF = vTexCoord;
+
 			gl_Position = projectionMatrix * modelViewMatrix * vPosition;
 		}
 	</script>
@@ -72,9 +80,15 @@
 	<script id="fShaderGouraud" type="x-shader/x-fragment">
 		precision mediump float;
 		varying vec4 fColor;
+		varying vec2 vTexCoordF;
+		uniform sampler2D texture;
+		uniform bool lightOn;
 
 		void main() {
-			gl_FragColor = fColor;
+			if (vTexCoordF == vec2(0, 0)) {
+				gl_FragColor = fColor;
+			} else if (lightOn) gl_FragColor = texture2D(texture, vTexCoordF);
+			else gl_FragColor = vec4(0.3, 0.3, 0.3, 1) * texture2D(texture, vTexCoordF);
 		}
 	</script>
 
@@ -85,7 +99,9 @@
 		uniform float shininess;
 		varying vec3 L, N, V;
 		varying vec4 materialDiffuseF, materialSpecularF;
+		varying vec2 vTexCoordF;
 		uniform bool lightOn;
+		uniform sampler2D texture;
 
 		void main() {
 			vec4 fColor;
@@ -99,7 +115,10 @@
 			} else fColor = lightAmbient * materialDiffuseF;
 			fColor.a = 1.0;
 
-			gl_FragColor = fColor;
+			if (vTexCoordF == vec2(0, 0)) {
+				gl_FragColor = fColor;
+			} else if (lightOn) gl_FragColor = texture2D(texture, vTexCoordF);
+			else gl_FragColor = vec4(0.3, 0.3, 0.3, 1) * texture2D(texture, vTexCoordF);
 		}
 	</script>
 
@@ -125,7 +144,7 @@
 	<div class="hero-overlay"></div>
 	<h1 class="hero-title">
 		Yihong Xu
-		<em>CS4731 Project 2</em>
+		<em>CS4731 Project 3</em>
 	</h1>
 </header>
 
@@ -150,9 +169,19 @@
 
 					<p style="text-align: center">
 						<label>
-							Ball Color:
-							<input type="color" id="ballColor">
+							Ambient Light Color:
+							<input type="color" id="lightAmbient">
 						</label>
+						<label>
+							Diffuse Light Color:
+							<input type="color" id="lightDiffuse">
+						</label>
+						<label>
+							Specular Light Color:
+							<input type="color" id="lightSpecular">
+						</label>
+					</p>
+					<p style="text-align: center">
 						<label>
 							<input type="checkbox" id="animationCheckbox"
 							       onchange="render()">
@@ -171,7 +200,7 @@
 						<label>
 							<input type="checkbox" id="invertCheckbox"
 							       onchange="readIn()">
-							X-ray (invert colors, I liked this more)
+							X-ray (invert material colors, I liked this more)
 						</label>
 					</p>
 					<p style="text-align: center">
