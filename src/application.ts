@@ -105,13 +105,15 @@ async function readIn() {
 	materialSpecular = [];
 
 	offset = [2.9, -0.2, 0];
-	await parseObject("car");
+	await parseObject("1/car");
+	offset = [2.5, 0.6, 1.5];
+	await parseObject("2/bunny");
 	offset = [0, 0, 0];
-	await parseObject("lamp");
+	await parseObject("1/lamp");
 	offset = [0, 0, -4.5];
-	await parseObject("stopsign");
+	await parseObject("1/stopsign");
 	offset = [0, 0, 0];
-	await parseObject("street");
+	await parseObject("1/street");
 	// offset = [0, 0, 0];
 	// await parseObject("street_alt");
 	offset = [2, -1, -2];
@@ -124,7 +126,7 @@ async function readIn() {
 async function parseObject(fileName: string) {
 	let listOfMaterials: any[] = [];
 
-	await fetch('https://web.cs.wpi.edu/~jmcuneo/cs4731/project3_1/' + fileName + ".mtl")
+	await fetch('https://web.cs.wpi.edu/~jmcuneo/cs4731/project3_' + fileName + ".mtl")
 		.then(response => response.text())
 		.then(async data => {
 			// console.log("Processing file: " + fileName + ".mtl");
@@ -179,7 +181,7 @@ async function parseObject(fileName: string) {
 			}
 		});
 
-	await fetch('https://web.cs.wpi.edu/~jmcuneo/cs4731/project3_1/' + fileName + ".obj")
+	await fetch('https://web.cs.wpi.edu/~jmcuneo/cs4731/project3_' + fileName + ".obj")
 		.then(response => response.text())
 		.then(data => {
 			// console.log("Processing file: " + fileName + ".obj");
