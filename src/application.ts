@@ -149,8 +149,7 @@ async function parseObject(fileName: string) {
 					let segs = thisLine.split(" ");
 					switch (segs[0]) {
 						case "Kd":
-							if (invertCheckbox.checked)
-								material[1] = [1 - +segs[1], 1 - +segs[2], 1 - +segs[3], 1];
+							if (invertCheckbox.checked) material[1] = [1 - +segs[1], 1 - +segs[2], 1 - +segs[3], 1];
 							else material[1] = [+segs[1], +segs[2], +segs[3], 1];
 							break;
 						case "Ks":
@@ -426,17 +425,17 @@ window.onkeypress = function (event: { key: any; }) {
 			lampLightCheckbox.checked = !lampLightCheckbox.checked;
 			if (!animationCheckbox.checked) render();
 			break;
-		// Toggle X-ray
-		case "x":
-		case "X":
-			invertCheckbox.checked = !invertCheckbox.checked;
-			readIn();
-			break;
 		// Toggle between Gouraud shading and Phong shading
 		case "q":
 		case "Q":
 			phongCheckbox.checked = !phongCheckbox.checked;
 			shaderChange();
+			break;
+		// Toggle X-ray
+		case "x":
+		case "X":
+			invertCheckbox.checked = !invertCheckbox.checked;
+			readIn();
 			break;
 		// Change animation speed with numbers
 		case "1":

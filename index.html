@@ -270,40 +270,28 @@
 							<th>Secondary</th>
 						</tr>
 						<tr>
-							<td>pathLOD--</td>
-							<td>J</td>
-							<td>-</td>
-						</tr>
-						<tr>
-							<td>pathLOD++</td>
-							<td>I</td>
-							<td>=</td>
-						</tr>
-						<tr>
-							<td>sphereLOD--</td>
-							<td>Q</td>
-							<td>_</td>
-						</tr>
-						<tr>
-							<td>sphereLOD++</td>
-							<td>E</td>
-							<td>+</td>
-						</tr>
-						<tr>
 							<td>Toggle Animation</td>
-							<td>A</td>
+							<td>C</td>
+							<td>c</td>
+						</tr>
+						<tr>
+							<td>Toggle Lamp Light</td>
+							<td>L</td>
+							<td>l</td>
+						</tr>
+						<tr>
+							<td>Toggle Between Gouraud Shading and Phong Shading</td>
+							<td>Q</td>
+							<td>q</td>
 						</tr>
 						<tr>
 							<td>Change Animation Speed from 1x to 10x</td>
 							<td>number 1-0</td>
 						</tr>
 						<tr>
-							<td>Toggle Between Gouraud Shading and Phong Shading</td>
-							<td>L</td>
-						</tr>
-						<tr>
 							<td>Super Reset</td>
 							<td>R</td>
+							<td>r</td>
 						</tr>
 					</table>
 
@@ -311,59 +299,42 @@
 					<h2 id="specialfeatures">Special Features</h2>
 
 					<ul>
-						<li>Hyper Smooth and Quick Load:
+						<li>Additional Object (G3P "statue"):
 							<ul>
-								<li>Does all calculation one time and one time only (on page load)</li>
-								<li>Results in super smooth animation and mode/subdivision switching</li>
-								<li>Occupies a constant amount of RAM with much less I/O (around 98% less memory write
-									for 1 minute of using)
+								<li>The object was not stored in a web server, it was a string contained in the
+									script.
 								</li>
-								<li>No in-between: If your computer can run it, it can run the entirety of it</li>
-								<li>No animation jumping what so ever (recreated animation system from the demo video,
-									but adjusted to eliminate jumping)
+								<li>It does not have a texture, the material diffuse is white and specular is purple
 								</li>
-								<li>Optimized animation frame rate - should be able to render at maximum FPS even on
-									weaker platforms
-								</li>
+								<li>It contains contents similar to other .obj files</li>
 							</ul>
 						</li>
-						<li>Change the sphere's color in the control section</li>
+						<li>Lighting Mode Change: Toggle between Gouraud shading and Phong shading</li>
+						<li>X-ray: Invert the colors from the .mtl files, the background and the additional object</li>
+						<li>Change the Ambient Light Color, Diffuse Light Color and Specular Light Color in the control
+							section
+						</li>
+						<li>Toggle animation, lamp light and X-ray (inversion) in the control section</li>
+						<li>Change lighting modes between Gouraud and Phong in the control section</li>
 						<li>Change the animation's speed from 1x to 10x in the control section</li>
 						<li>Change the y axis FOV from 0 to 180 in the control section</li>
 						<li>Change the camera's distance from -25 to 25 in the control section</li>
 						<li>Change the perspective's far field from 0 to 100 in the control section</li>
-						<li>Sphere Only and The Blue:
-							<ul>
-								<li>There exist an issue that weird navy shades appear on the sphere and we don't know
-									why. After experimenting, we know that it is relative to the camera.
-								</li>
-								<li>The default camera position pur the camera at a certain distance from the sphere
-									that minimizes the effect of the blue.
-								</li>
-								<li>The sphere only mode was created to show only the sphere with no animation, this
-									viewing mode does not suffer from the blue at all.
-								</li>
-							</ul>
-						</li>
-						<li>"Super Reset": Pressing the R key resets the wireframe, animation, lighting mode, sphere
-							only mode, animation speed, sphere and path subdivision level, field of view, camera
-							distance, perspective far, ball color and animation position information.
+						<li>"Super Reset": Pressing the R key resets the Animation, Lighting Mode, Ambient Light Color,
+							Diffuse Light Color, Specular Light Color, Animation Speed, Animation Degree, Animation
+							Variance, Animation Variance Direction, Lamp Light, X-ray, field of view, camera distance
+							and perspective far information.
 						</li>
 						<li>This Page:
 							<ul>
-								<li>Control Section: toggle functionalities and control view, ball color, lighting modes
-									and objects
+								<li>Control Section: toggle functionalities and control view, color and lighting modes
 								</li>
 								<li>Debug Section:
 									<ul>
-										<li>Tick Value: animation value from 0 to 1535 that represents on what part
-											should the sphere be
+										<li>Animation Degree: animation value from 0 to 360 that the camera rotate about
+											the Y axis
 										</li>
-										<li>Adjusted Tick Value: adjusted Tick to offset slopped starting points of
-											different subdivision numbers
-										</li>
-										<li>Line Composition: for animation, shows the composition of the point that the
-											sphere is currently on
+										<li>Animation Variance: Amount that the camera bounce up or down
 										</li>
 									</ul>
 								</li>
@@ -375,8 +346,8 @@
 							</ul>
 						</li>
 						<li>Note: the loading of .mtl files does not get affected by what was stored in the mtllib
-							section of the .obj file, for example, if street.obj's mtllib became streetee.mtl, the
-							program will still proceed to try load street.mtl from the server. This is to save load
+							section of the .obj file, for example, if street.obj's mtllib changes to streetee.mtl, the
+							program will still proceed to try load street.mtl from the server. This is to optimize load
 							time.
 						</li>
 						<li>There defiantly are others but I lost track</li>
