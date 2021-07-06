@@ -11,20 +11,23 @@ let materialDiffuse: number[][];
 let materialSpecular: number[][];
 let offset: number[];
 let objectLength: number[];
-let lightAmbient = [0.3, 0.3, 0.3, 1];
+let lightPosition = [0, 5, 0, 1];
+let lightAmbient = [0.1, 0.1, 0.1, 1];
 let lightDiffuse = [1, 1, 1, 1];
 let lightSpectular = [1, 1, 1, 1];
+let stack: number[][] = [];
 
 // Controls
-let animationSpeed: HTMLInputElement;
+let lightAmbientInput: HTMLInputElement;
+let lightDiffuseInput: HTMLInputElement;
+let lightSpectularInput: HTMLInputElement;
+let shadowsCheckbox: HTMLInputElement;
 let camAnimationCheckbox: HTMLInputElement;
 let carAnimationCheckbox: HTMLInputElement;
 let lampLightCheckbox: HTMLInputElement;
 let invertCheckbox: HTMLInputElement;
 let phongCheckbox: HTMLInputElement;
-let lightAmbientInput: HTMLInputElement;
-let lightDiffuseInput: HTMLInputElement;
-let lightSpectularInput: HTMLInputElement;
+let animationSpeed: HTMLInputElement;
 
 // Animation: Degree to rotate car about the Y axis
 let carDegree = 0;
@@ -39,6 +42,7 @@ let varianceDir = true;
 window.onload = async function () {
 	canvas = <HTMLCanvasElement>document.getElementById("webgl");
 	animationSpeed = <HTMLInputElement>document.getElementById("animationSpeed");
+	shadowsCheckbox = <HTMLInputElement>document.getElementById("shadowsCheckbox");
 	camAnimationCheckbox = <HTMLInputElement>document.getElementById("camAnimationCheckbox");
 	carAnimationCheckbox = <HTMLInputElement>document.getElementById("carAnimationCheckbox");
 	lampLightCheckbox = <HTMLInputElement>document.getElementById("lampLightCheckbox");
@@ -51,7 +55,7 @@ window.onload = async function () {
 	// Listens for lightAmbient input and change colors
 	lightAmbientInput.oninput = function () {
 		if (lightAmbientInput.value == null || lightAmbientInput.value == "") {
-			lightAmbient = [0.3, 0.3, 0.3, 1];
+			lightAmbient = [0.1, 0.1, 0.1, 1];
 		} else {
 			lightAmbient[0] = parseInt(lightAmbientInput.value.substr(1, 2), 16) / 255;
 			lightAmbient[1] = parseInt(lightAmbientInput.value.substr(3, 2), 16) / 255;
@@ -110,7 +114,7 @@ async function readIn() {
 	materialSpecular = [];
 	objectLength = [];
 
-	offset = [2.9, -0.2, 0];
+	offset = [2.9, 0, 0];
 	await parseObject("1/car");
 	objectLength.push(vPosition.length);
 	offset = [2.5, 0.6, 1.5];
@@ -122,15 +126,15 @@ async function readIn() {
 	offset = [0, 0, -4.5];
 	await parseObject("1/stopsign");
 	objectLength.push(vPosition.length);
+	offset = [2, -1, -2];
+	await parseMyObject();
+	objectLength.push(vPosition.length);
 	offset = [0, 0, 0];
 	await parseObject("1/street");
 	objectLength.push(vPosition.length);
 	// offset = [0, 0, 0];
 	// await parseObject("street_alt");
 	// objectLength.push(vPosition.length);
-	offset = [2, -1, -2];
-	await parseMyObject();
-	objectLength.push(vPosition.length);
 
 	shaderChange();
 }
@@ -372,7 +376,7 @@ function shaderChange() {
 	gl.enableVertexAttribArray(materialSpecularPosition);
 
 	// Light Calculation
-	gl.uniform4fv(gl.getUniformLocation(program, "lightPosition"), [0, 5, 0, 1]);
+	gl.uniform4fv(gl.getUniformLocation(program, "lightPosition"), lightPosition);
 	gl.uniform4fv(gl.getUniformLocation(program, "lightAmbient"), lightAmbient);
 	gl.uniform4fv(gl.getUniformLocation(program, "lightDiffuse"), lightDiffuse);
 	gl.uniform4fv(gl.getUniformLocation(program, "lightSpecular"), lightSpectular);
@@ -394,7 +398,7 @@ function render() {
 		gl.uniform1f(gl.getUniformLocation(program, "lightOn"), 1);
 	else gl.uniform1f(gl.getUniformLocation(program, "lightOn"), 0);
 
-	// View Matrix
+	// Spectator View Matrix
 	let cameraDistance = +(<HTMLInputElement>document.getElementById("cameraDistance")).value;
 	let sin = Math.sin(radians(camDegree));
 	let cos = Math.cos(radians(camDegree));
@@ -406,13 +410,34 @@ function render() {
 		(<HTMLInputElement>document.getElementById("fieldOfViewY")).value, canvas.width / canvas.height, 0.1,
 		(<HTMLInputElement>document.getElementById("perspectiveFar")).value)));
 
-	// Draw Car
-	gl.uniformMatrix4fv(gl.getUniformLocation(program, "modelViewMatrix"), false, flatten(mult(viewMatrix, rotateY(carDegree))));
-	gl.drawArrays(gl.TRIANGLES, 0, objectLength[0])
+	// Car Animation Model Matrix
+	let modelMatrix = rotateY(carDegree);
+
+	// Draw Car and bunny
+	gl.uniformMatrix4fv(gl.getUniformLocation(program, "modelViewMatrix"), false, flatten(mult(viewMatrix, modelMatrix)));
+	gl.drawArrays(gl.TRIANGLES, 0, objectLength[1])
 
 	// Draw other triangles
 	gl.uniformMatrix4fv(gl.getUniformLocation(program, "modelViewMatrix"), false, flatten(viewMatrix));
-	gl.drawArrays(gl.TRIANGLES, objectLength[0], vPosition.length - objectLength[0]);
+	gl.drawArrays(gl.TRIANGLES, objectLength[1], vPosition.length - objectLength[1]);
+
+	// Draw Shadows
+	if (shadowsCheckbox.checked && lampLightCheckbox.checked) {
+		let m = mat4();
+		m[3][3] = 0;
+		m[3][1] = -1 / lightPosition[1];
+		const shadowModelMatrix = mult(mult(translate(lightPosition[0], lightPosition[1], lightPosition[2]), m), translate(-lightPosition[0], -lightPosition[1], -lightPosition[2]));
+		gl.uniform1f(gl.getUniformLocation(program, "lightOn"), 0);
+
+		// Shadows of Car and bunny
+		gl.uniformMatrix4fv(gl.getUniformLocation(program, "modelViewMatrix"), false, flatten(mult(viewMatrix, mult(shadowModelMatrix, rotateY(carDegree)))));
+		gl.drawArrays(gl.TRIANGLES, 0, objectLength[1]);
+
+		// Shadows of Other triangles
+		gl.uniformMatrix4fv(gl.getUniformLocation(program, "modelViewMatrix"), false, flatten(mult(viewMatrix, shadowModelMatrix)));
+		gl.drawArrays(gl.TRIANGLES, objectLength[1], objectLength[4] - objectLength[1]);
+	}
+
 	// Animation based on rendering ticks: (not relative to time, progresses one step per frame)
 	if (camAnimationCheckbox.checked && carAnimationCheckbox.checked) {
 		// Cam Degree
@@ -450,6 +475,12 @@ function render() {
 // Keyboard Shortcuts
 window.onkeypress = function (event: { key: any; }) {
 	switch (event.key) {
+		// Toggle shadows
+		case "s":
+		case "S":
+			shadowsCheckbox.checked = !shadowsCheckbox.checked;
+			if (!camAnimationCheckbox.checked && !carAnimationCheckbox.checked) render();
+			break;
 		// Toggle camera animation
 		case "a":
 		case "A":
@@ -501,9 +532,14 @@ window.onkeypress = function (event: { key: any; }) {
 			(<HTMLInputElement>document.getElementById("fieldOfViewY")).value = "50";
 			(<HTMLInputElement>document.getElementById("cameraDistance")).value = "7";
 			(<HTMLInputElement>document.getElementById("perspectiveFar")).value = "30";
-			lightAmbient = [0.3, 0.3, 0.3, 1];
+			(<HTMLInputElement>document.getElementById("lightX")).value = "0";
+			(<HTMLInputElement>document.getElementById("lightY")).value = "5";
+			(<HTMLInputElement>document.getElementById("lightZ")).value = "0";
+			lightPosition = [0, 5, 0, 1];
+			lightAmbient = [0.1, 0.1, 0.1, 1];
 			lightDiffuse = [1, 1, 1, 1];
 			lightSpectular = [1, 1, 1, 1];
+			shadowsCheckbox.checked = true;
 			camAnimationCheckbox.checked = false;
 			carAnimationCheckbox.checked = false;
 			lampLightCheckbox.checked = true;
