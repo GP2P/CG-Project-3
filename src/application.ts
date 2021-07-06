@@ -10,13 +10,15 @@ let vTexCoord: number[][];
 let materialDiffuse: number[][];
 let materialSpecular: number[][];
 let offset: number[];
+let objectLength: number[];
 let lightAmbient = [0.3, 0.3, 0.3, 1];
 let lightDiffuse = [1, 1, 1, 1];
 let lightSpectular = [1, 1, 1, 1];
 
 // Controls
 let animationSpeed: HTMLInputElement;
-let animationCheckbox: HTMLInputElement;
+let camAnimationCheckbox: HTMLInputElement;
+let carAnimationCheckbox: HTMLInputElement;
 let lampLightCheckbox: HTMLInputElement;
 let invertCheckbox: HTMLInputElement;
 let phongCheckbox: HTMLInputElement;
@@ -24,8 +26,10 @@ let lightAmbientInput: HTMLInputElement;
 let lightDiffuseInput: HTMLInputElement;
 let lightSpectularInput: HTMLInputElement;
 
-// Animation: Degree to rotate about the Y axis
-let degree = 0;
+// Animation: Degree to rotate car about the Y axis
+let carDegree = 0;
+// Animation: Degree to rotate camera about the Y axis
+let camDegree = 0;
 // Animation: Amount to bounce up or down
 let variance = 0;
 // Animation: variance direction
@@ -35,7 +39,8 @@ let varianceDir = true;
 window.onload = async function () {
 	canvas = <HTMLCanvasElement>document.getElementById("webgl");
 	animationSpeed = <HTMLInputElement>document.getElementById("animationSpeed");
-	animationCheckbox = <HTMLInputElement>document.getElementById("animationCheckbox");
+	camAnimationCheckbox = <HTMLInputElement>document.getElementById("camAnimationCheckbox");
+	carAnimationCheckbox = <HTMLInputElement>document.getElementById("carAnimationCheckbox");
 	lampLightCheckbox = <HTMLInputElement>document.getElementById("lampLightCheckbox");
 	invertCheckbox = <HTMLInputElement>document.getElementById("invertCheckbox");
 	phongCheckbox = <HTMLInputElement>document.getElementById("phongCheckbox");
@@ -103,21 +108,29 @@ async function readIn() {
 	vTexCoord = [];
 	materialDiffuse = [];
 	materialSpecular = [];
+	objectLength = [];
 
 	offset = [2.9, -0.2, 0];
 	await parseObject("1/car");
+	objectLength.push(vPosition.length);
 	offset = [2.5, 0.6, 1.5];
 	await parseObject("2/bunny");
+	objectLength.push(vPosition.length);
 	offset = [0, 0, 0];
 	await parseObject("1/lamp");
+	objectLength.push(vPosition.length);
 	offset = [0, 0, -4.5];
 	await parseObject("1/stopsign");
+	objectLength.push(vPosition.length);
 	offset = [0, 0, 0];
 	await parseObject("1/street");
+	objectLength.push(vPosition.length);
 	// offset = [0, 0, 0];
 	// await parseObject("street_alt");
+	// objectLength.push(vPosition.length);
 	offset = [2, -1, -2];
 	await parseMyObject();
+	objectLength.push(vPosition.length);
 
 	shaderChange();
 }
@@ -129,8 +142,6 @@ async function parseObject(fileName: string) {
 	await fetch('https://web.cs.wpi.edu/~jmcuneo/cs4731/project3_' + fileName + ".mtl")
 		.then(response => response.text())
 		.then(async data => {
-			// console.log("Processing file: " + fileName + ".mtl");
-
 			let newmtls = data.split('newmtl');
 			for (let mtlIndex = 1; mtlIndex < newmtls.length; mtlIndex++) {
 				// Create material
@@ -145,7 +156,6 @@ async function parseObject(fileName: string) {
 				material[0] = lines[0].split(" ")[1];
 
 				// Parse material
-				// console.log("\tProcessing material: " + material[0]);
 				for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
 					let thisLine = lines[lineIndex];
 					let segs = thisLine.split(" ");
@@ -184,8 +194,6 @@ async function parseObject(fileName: string) {
 	await fetch('https://web.cs.wpi.edu/~jmcuneo/cs4731/project3_' + fileName + ".obj")
 		.then(response => response.text())
 		.then(data => {
-			// console.log("Processing file: " + fileName + ".obj");
-
 			// List of data
 			let vertices: number[][] = [];
 			let vertexNormals: number[][] = [];
@@ -370,44 +378,71 @@ function shaderChange() {
 	gl.uniform4fv(gl.getUniformLocation(program, "lightSpecular"), lightSpectular);
 	gl.uniform1f(gl.getUniformLocation(program, "shininess"), 20);
 
-	if (!animationCheckbox.checked) render();
+	if (!camAnimationCheckbox.checked && !carAnimationCheckbox.checked) render();
 }
 
 // Animation
 function render() {
-	document.getElementById("animationDegree")!.innerText = String(degree) + "˚";
-	document.getElementById("animationVariance")!.innerText = String(variance.toFixed(3));
+	document.getElementById("camAnimationDegree")!.innerText = String(camDegree) + "˚";
+	document.getElementById("camAnimationVariance")!.innerText = String(variance.toFixed(3));
+	document.getElementById("carAnimationDegree")!.innerText = String(carDegree) + "˚";
 
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
-	// Model, View, Projection Matrices
-	let cameraDistance = +(<HTMLInputElement>document.getElementById("cameraDistance")).value;
-	let viewMatrix = lookAt(mult(
-		mat3(Math.cos(radians(degree)), 0, Math.sin(radians(degree)),
-			0, 1, 0,
-			-Math.sin(radians(degree)), 0, Math.cos(radians(degree))),
-		[cameraDistance, variance + 5, cameraDistance]), [0, 0, 0], [0, 1, 0]);
-	gl.uniformMatrix4fv(gl.getUniformLocation(program, "projectionMatrix"), false, flatten(perspective(
-		(<HTMLInputElement>document.getElementById("fieldOfViewY")).value, canvas.width / canvas.height, 0.1,
-		(<HTMLInputElement>document.getElementById("perspectiveFar")).value)));
-	gl.uniformMatrix4fv(gl.getUniformLocation(program, "modelViewMatrix"), false, flatten(viewMatrix));
 
 	// Toggle lamp light
 	if (lampLightCheckbox.checked)
 		gl.uniform1f(gl.getUniformLocation(program, "lightOn"), 1);
 	else gl.uniform1f(gl.getUniformLocation(program, "lightOn"), 0);
 
-	// Draw triangles
-	gl.drawArrays(gl.TRIANGLES, 0, vPosition.length);
+	// View Matrix
+	let cameraDistance = +(<HTMLInputElement>document.getElementById("cameraDistance")).value;
+	let sin = Math.sin(radians(camDegree));
+	let cos = Math.cos(radians(camDegree));
+	let viewMatrix = lookAt(mult(mat3(cos, 0, sin, 0, 1, 0, -sin, 0, cos),
+		[cameraDistance, variance + 5, cameraDistance]), [0, 0, 0], [0, 1, 0]);
 
+	// Projection Matrix
+	gl.uniformMatrix4fv(gl.getUniformLocation(program, "projectionMatrix"), false, flatten(perspective(
+		(<HTMLInputElement>document.getElementById("fieldOfViewY")).value, canvas.width / canvas.height, 0.1,
+		(<HTMLInputElement>document.getElementById("perspectiveFar")).value)));
+
+	// Draw Car
+	gl.uniformMatrix4fv(gl.getUniformLocation(program, "modelViewMatrix"), false, flatten(mult(viewMatrix, rotateY(carDegree))));
+	gl.drawArrays(gl.TRIANGLES, 0, objectLength[0])
+
+	// Draw other triangles
+	gl.uniformMatrix4fv(gl.getUniformLocation(program, "modelViewMatrix"), false, flatten(viewMatrix));
+	gl.drawArrays(gl.TRIANGLES, objectLength[0], vPosition.length - objectLength[0]);
 	// Animation based on rendering ticks: (not relative to time, progresses one step per frame)
-	if (animationCheckbox.checked) {
-		if (degree > 360) degree -= 360;
-		else degree += +animationSpeed.value;
+	if (camAnimationCheckbox.checked && carAnimationCheckbox.checked) {
+		// Cam Degree
+		camDegree += +animationSpeed.value;
+		if (camDegree > 359) camDegree -= 360;
+		// Cam Variance
 		if (variance > 3) varianceDir = false;
 		else if (variance < -3) varianceDir = true;
+		// Cam Variance Direction
 		if (varianceDir) variance += 3 * (+animationSpeed.value / 360);
 		else variance -= 3 * (+animationSpeed.value / 360);
+		// Car Degree
+		carDegree += -animationSpeed.value;
+		if (carDegree < 0) carDegree += 360;
+		requestAnimationFrame(render);
+	} else if (camAnimationCheckbox.checked) {
+		// Cam Degree
+		camDegree += +animationSpeed.value;
+		if (camDegree > 359) camDegree -= 360;
+		// Cam Variance
+		if (variance > 3) varianceDir = false;
+		else if (variance < -3) varianceDir = true;
+		// Cam Variance Direction
+		if (varianceDir) variance += 3 * (+animationSpeed.value / 360);
+		else variance -= 3 * (+animationSpeed.value / 360);
+		requestAnimationFrame(render);
+	} else if (carAnimationCheckbox.checked) {
+		// Car Degree
+		carDegree += -animationSpeed.value;
+		if (carDegree < 0) carDegree += 360;
 		requestAnimationFrame(render);
 	}
 }
@@ -415,17 +450,23 @@ function render() {
 // Keyboard Shortcuts
 window.onkeypress = function (event: { key: any; }) {
 	switch (event.key) {
-		// Toggle animation
-		case "c":
-		case "C":
-			animationCheckbox.checked = !animationCheckbox.checked;
-			render();
+		// Toggle camera animation
+		case "a":
+		case "A":
+			camAnimationCheckbox.checked = !camAnimationCheckbox.checked;
+			if (!carAnimationCheckbox.checked) render();
+			break;
+		// Toggle car animation
+		case "m":
+		case "M":
+			carAnimationCheckbox.checked = !carAnimationCheckbox.checked;
+			if (!camAnimationCheckbox.checked) render();
 			break;
 		// Toggle lamp light
 		case "l":
 		case "L":
 			lampLightCheckbox.checked = !lampLightCheckbox.checked;
-			if (!animationCheckbox.checked) render();
+			if (!camAnimationCheckbox.checked && !carAnimationCheckbox.checked) render();
 			break;
 		// Toggle between Gouraud shading and Phong shading
 		case "q":
@@ -463,14 +504,16 @@ window.onkeypress = function (event: { key: any; }) {
 			lightAmbient = [0.3, 0.3, 0.3, 1];
 			lightDiffuse = [1, 1, 1, 1];
 			lightSpectular = [1, 1, 1, 1];
-			animationCheckbox.checked = false;
+			camAnimationCheckbox.checked = false;
+			carAnimationCheckbox.checked = false;
 			lampLightCheckbox.checked = true;
 			phongCheckbox.checked = true;
 			invertCheckbox.checked = false;
 			animationSpeed.value = "1";
-			degree = 0;
+			camDegree = 0;
 			variance = 0;
 			varianceDir = true;
+			carDegree = 0;
 			readIn();
 			break;
 		default:
