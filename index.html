@@ -173,26 +173,26 @@
 							X:
 							<input type="range" id="lightX" min="-10" max="10"
 							       step="0.01" value="0"
-							       oninput="lightPosition[0] = +this.value;if (!camAnimationCheckbox.checked && !carAnimationCheckbox.checked) render()">
+							       oninput="lightPosition[0] = +this.value; if (!animating) render()">
 						</label>
 						<input type="button" id="lightXReset" value="R"
-						       onclick="lightX.value=0;lightPosition[0] = +this.value;if (!camAnimationCheckbox.checked && !carAnimationCheckbox.checked) render()">
+						       onclick="lightX.value=0;lightPosition[0] = +this.value; if (!animating) render()">
 						<label>
 							Y:
 							<input type="range" id="lightY" min="-10" max="10"
 							       step="0.01" value="5"
-							       oninput="lightPosition[0] = +this.value;if (!camAnimationCheckbox.checked && !carAnimationCheckbox.checked) render()">
+							       oninput="lightPosition[0] = +this.value; if (!animating) render()">
 						</label>
 						<input type="button" id="lightYReset" value="R"
-						       onclick="lightY.value=5;lightPosition[0] = +this.value;if (!camAnimationCheckbox.checked && !carAnimationCheckbox.checked) render()">
+						       onclick="lightY.value=5;lightPosition[0] = +this.value; if (!animating) render()">
 						<label>
 							Z:
 							<input type="range" id="lightZ" min="-10" max="10"
 							       step="0.01" value="0"
-							       oninput="lightPosition[0] = +this.value;if (!camAnimationCheckbox.checked && !carAnimationCheckbox.checked) render()">
+							       oninput="lightPosition[0] = +this.value; if (!animating) render()">
 						</label>
 						<input type="button" id="lightZReset" value="R"
-						       onclick="lightZ.value=0;lightPosition[0] = +this.value;if (!camAnimationCheckbox.checked && !carAnimationCheckbox.checked) render()">
+						       onclick="lightZ.value=0;lightPosition[0] = +this.value; if (!animating) render()">
 					</p>
 					<p style="text-align: center">
 						<label>
@@ -211,22 +211,27 @@
 					<p style="text-align: center">
 						<label>
 							<input type="checkbox" id="shadowsCheckbox" checked
-							       onchange="if (!carAnimationCheckbox.checked) render()">
+							       onchange="if (!animating) render()">
 							Shadows
 						</label>
 						<label>
-							<input type="checkbox" id="camAnimationCheckbox"
-							       onchange="if (!carAnimationCheckbox.checked) render()">
-							Camera Animation Mode
-						</label>
-						<label>
 							<input type="checkbox" id="carAnimationCheckbox"
-							       onchange="if (!camAnimationCheckbox.checked) render()">
+							       onchange="if (!animating) render()">
 							Car Animation Mode
 						</label>
 						<label>
+							<input type="checkbox" id="carCamCheckbox"
+							       onchange="camAnimationCheckbox.checked = false; if (!animating) render();">
+							Car Camera Mode
+						</label>
+						<label>
+							<input type="checkbox" id="camAnimationCheckbox"
+							       onchange="carCamCheckbox.checked = false; if (!animating) render()">
+							Camera Animation Mode
+						</label>
+						<label>
 							<input type="checkbox" id="lampLightCheckbox" checked
-							       onchange="if (!camAnimationCheckbox.checked && !carAnimationCheckbox.checked) render()">
+							       onchange="if (!animating) render()">
 							Lamp Light
 						</label>
 						<label>
@@ -258,26 +263,26 @@
 							Field of View:
 							<input type="range" id="fieldOfViewY" min="0" max="180"
 							       step="1" value="50"
-							       oninput="if (!camAnimationCheckbox.checked && !carAnimationCheckbox.checked) render()">
+							       oninput="if (!animating) render()">
 						</label>
 						<input type="button" id="fieldOfViewYReset" value="R"
-						       onclick="fieldOfViewY.value=50;if (!camAnimationCheckbox.checked && !carAnimationCheckbox.checked) render()">
+						       onclick="fieldOfViewY.value=50; if (!animating) render()">
 						<label>
 							Camera Distance:
 							<input type="range" id="cameraDistance" min="-30" max="20"
 							       value="7"
-							       oninput="if (!camAnimationCheckbox.checked && !carAnimationCheckbox.checked) render()">
+							       oninput="if (!animating) render()">
 						</label>
 						<input type="button" id="cameraDistanceReset" value="R"
-						       onclick="cameraDistance.value=7;if (!camAnimationCheckbox.checked && !carAnimationCheckbox.checked) render()">
+						       onclick="cameraDistance.value=7; if (!animating) render()">
 						<label>
 							Perspective Far:
 							<input type="range" id="perspectiveFar" min="0" max="100"
 							       value="30"
-							       oninput="if (!camAnimationCheckbox.checked && !carAnimationCheckbox.checked) render()">
+							       oninput="if (!animating) render()">
 						</label>
 						<input type="button" id="farReset" value="R"
-						       onclick="perspectiveFar.value=30;if (!camAnimationCheckbox.checked && !carAnimationCheckbox.checked) render()">
+						       onclick="perspectiveFar.value=30; if (!animating) render()">
 					</p>
 
 					<!--Debug Information Table-->
@@ -354,7 +359,9 @@
 							</ul>
 						</li>
 						<li>Camera and Car animation: Animate the 3rd person camera and car at the same time</li>
-						<li>Everyone has shadows: All objects casts shadows to the ground, except for the ground itself</li>
+						<li>Everyone has shadows: All objects casts shadows to the ground, except for the ground
+							itself
+						</li>
 						<li>Change Light Position: Change where the light is and see how the shadows change</li>
 						<li>Lighting Mode Change: Toggle between Gouraud shading and Phong shading</li>
 						<li>X-ray: Invert the colors from the .mtl files, the background and the additional object</li>

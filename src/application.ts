@@ -2,6 +2,7 @@
 let canvas: HTMLCanvasElement;
 let gl: WebGLRenderingContext;
 let program: WebGLProgram;
+let animating: boolean;
 
 // Data
 let vPosition: number[][];
@@ -21,6 +22,7 @@ let stack: number[][] = [];
 let lightAmbientInput: HTMLInputElement;
 let lightDiffuseInput: HTMLInputElement;
 let lightSpectularInput: HTMLInputElement;
+let carCamCheckbox: HTMLInputElement;
 let shadowsCheckbox: HTMLInputElement;
 let camAnimationCheckbox: HTMLInputElement;
 let carAnimationCheckbox: HTMLInputElement;
@@ -42,6 +44,7 @@ let varianceDir = true;
 window.onload = async function () {
 	canvas = <HTMLCanvasElement>document.getElementById("webgl");
 	animationSpeed = <HTMLInputElement>document.getElementById("animationSpeed");
+	carCamCheckbox = <HTMLInputElement>document.getElementById("carCamCheckbox");
 	shadowsCheckbox = <HTMLInputElement>document.getElementById("shadowsCheckbox");
 	camAnimationCheckbox = <HTMLInputElement>document.getElementById("camAnimationCheckbox");
 	carAnimationCheckbox = <HTMLInputElement>document.getElementById("carAnimationCheckbox");
@@ -382,7 +385,7 @@ function shaderChange() {
 	gl.uniform4fv(gl.getUniformLocation(program, "lightSpecular"), lightSpectular);
 	gl.uniform1f(gl.getUniformLocation(program, "shininess"), 20);
 
-	if (!camAnimationCheckbox.checked && !carAnimationCheckbox.checked) render();
+	if (!animating) render();
 }
 
 // Animation
@@ -452,6 +455,8 @@ function render() {
 		// Car Degree
 		carDegree += -animationSpeed.value;
 		if (carDegree < 0) carDegree += 360;
+
+		animating = true;
 		requestAnimationFrame(render);
 	} else if (camAnimationCheckbox.checked) {
 		// Cam Degree
@@ -463,13 +468,17 @@ function render() {
 		// Cam Variance Direction
 		if (varianceDir) variance += 3 * (+animationSpeed.value / 360);
 		else variance -= 3 * (+animationSpeed.value / 360);
+
+		animating = true;
 		requestAnimationFrame(render);
 	} else if (carAnimationCheckbox.checked) {
 		// Car Degree
 		carDegree += -animationSpeed.value;
 		if (carDegree < 0) carDegree += 360;
+
+		animating = true;
 		requestAnimationFrame(render);
-	}
+	} else animating = false;
 }
 
 // Keyboard Shortcuts
@@ -479,25 +488,33 @@ window.onkeypress = function (event: { key: any; }) {
 		case "s":
 		case "S":
 			shadowsCheckbox.checked = !shadowsCheckbox.checked;
-			if (!camAnimationCheckbox.checked && !carAnimationCheckbox.checked) render();
+			if (!animating) render();
 			break;
-		// Toggle camera animation
+		// Toggle spectator camera animation
 		case "a":
 		case "A":
 			camAnimationCheckbox.checked = !camAnimationCheckbox.checked;
-			if (!carAnimationCheckbox.checked) render();
+			carCamCheckbox.checked = false;
+			if (!animating) render();
+			break;
+		// Toggle camera position
+		case "c":
+		case "C":
+			carCamCheckbox.checked = !carCamCheckbox.checked;
+			camAnimationCheckbox.checked = false;
+			if (!animating) render();
 			break;
 		// Toggle car animation
 		case "m":
 		case "M":
 			carAnimationCheckbox.checked = !carAnimationCheckbox.checked;
-			if (!camAnimationCheckbox.checked) render();
+			if (!animating) render();
 			break;
 		// Toggle lamp light
 		case "l":
 		case "L":
 			lampLightCheckbox.checked = !lampLightCheckbox.checked;
-			if (!camAnimationCheckbox.checked && !carAnimationCheckbox.checked) render();
+			if (!animating) render();
 			break;
 		// Toggle between Gouraud shading and Phong shading
 		case "q":
@@ -539,6 +556,7 @@ window.onkeypress = function (event: { key: any; }) {
 			lightAmbient = [0.1, 0.1, 0.1, 1];
 			lightDiffuse = [1, 1, 1, 1];
 			lightSpectular = [1, 1, 1, 1];
+			carCamCheckbox.checked = false;
 			shadowsCheckbox.checked = true;
 			camAnimationCheckbox.checked = false;
 			carAnimationCheckbox.checked = false;
