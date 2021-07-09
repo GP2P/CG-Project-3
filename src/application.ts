@@ -22,6 +22,9 @@ let stack: number[][][] = [];
 let lightAmbientInput: HTMLInputElement;
 let lightDiffuseInput: HTMLInputElement;
 let lightSpectularInput: HTMLInputElement;
+let skyBoxCheckbox: HTMLInputElement;
+let reflectionCheckbox: HTMLInputElement;
+let refractionCheckbox: HTMLInputElement;
 let carCamCheckbox: HTMLInputElement;
 let shadowsCheckbox: HTMLInputElement;
 let camAnimationCheckbox: HTMLInputElement;
@@ -44,6 +47,9 @@ let varianceDir = true;
 window.onload = async function () {
 	canvas = <HTMLCanvasElement>document.getElementById("webgl");
 	animationSpeed = <HTMLInputElement>document.getElementById("animationSpeed");
+	skyBoxCheckbox = <HTMLInputElement>document.getElementById("skyBoxCheckbox");
+	reflectionCheckbox = <HTMLInputElement>document.getElementById("reflectionCheckbox");
+	refractionCheckbox = <HTMLInputElement>document.getElementById("refractionCheckbox");
 	carCamCheckbox = <HTMLInputElement>document.getElementById("carCamCheckbox");
 	shadowsCheckbox = <HTMLInputElement>document.getElementById("shadowsCheckbox");
 	camAnimationCheckbox = <HTMLInputElement>document.getElementById("camAnimationCheckbox");
@@ -98,7 +104,7 @@ window.onload = async function () {
 
 	gl.enable(gl.DEPTH_TEST);
 
-	readIn();
+	await readIn();
 }
 
 async function readIn() {
@@ -138,6 +144,130 @@ async function readIn() {
 	// offset = [0, 0, 0];
 	// await parseObject("street_alt");
 	// objectLength.push(vPosition.length);
+
+	// Sky Box
+	vPosition.push([10, 10, 10, 1]);
+	vPosition.push([10, -10, 10, 1]);
+	vPosition.push([10, -10, -10, 1]);
+
+	vPosition.push([10, 10, 10, 1]);
+	vPosition.push([10, 10, -10, 1]);
+	vPosition.push([10, -10, -10, 1]);
+
+	vNormal.push([-1, 0, 0, 0]);
+	vNormal.push([-1, 0, 0, 0]);
+	vNormal.push([-1, 0, 0, 0]);
+	vNormal.push([-1, 0, 0, 0]);
+	vNormal.push([-1, 0, 0, 0]);
+	vNormal.push([-1, 0, 0, 0]);
+
+	vPosition.push([10, 10, 10, 1]);
+	vPosition.push([-10, 10, 10, 1]);
+	vPosition.push([-10, 10, -10, 1]);
+
+	vPosition.push([10, 10, 10, 1]);
+	vPosition.push([10, 10, -10, 1]);
+	vPosition.push([-10, 10, -10, 1]);
+
+	vNormal.push([0, -1, 0, 0]);
+	vNormal.push([0, -1, 0, 0]);
+	vNormal.push([0, -1, 0, 0]);
+	vNormal.push([0, -1, 0, 0]);
+	vNormal.push([0, -1, 0, 0]);
+	vNormal.push([0, -1, 0, 0]);
+
+	vPosition.push([10, 10, 10, 1]);
+	vPosition.push([-10, 10, 10, 1]);
+	vPosition.push([-10, -10, 10, 1]);
+
+	vPosition.push([10, 10, 10, 1]);
+	vPosition.push([10, -10, 10, 1]);
+	vPosition.push([-10, -10, 10, 1]);
+
+	vNormal.push([0, 0, -1, 0]);
+	vNormal.push([0, 0, -1, 0]);
+	vNormal.push([0, 0, -1, 0]);
+	vNormal.push([0, 0, -1, 0]);
+	vNormal.push([0, 0, -1, 0]);
+	vNormal.push([0, 0, -1, 0]);
+
+	vPosition.push([-10, -10, -10, 1]);
+	vPosition.push([-10, 10, -10, 1]);
+	vPosition.push([-10, 10, 10, 1]);
+
+	vPosition.push([-10, -10, -10, 1]);
+	vPosition.push([-10, -10, 10, 1]);
+	vPosition.push([-10, 10, 10, 1]);
+
+	vNormal.push([1, 0, 0, 0]);
+	vNormal.push([1, 0, 0, 0]);
+	vNormal.push([1, 0, 0, 0]);
+	vNormal.push([1, 0, 0, 0]);
+	vNormal.push([1, 0, 0, 0]);
+	vNormal.push([1, 0, 0, 0]);
+
+	vPosition.push([-10, -10, -10, 1]);
+	vPosition.push([10, -10, -10, 1]);
+	vPosition.push([10, -10, 10, 1]);
+
+	vPosition.push([-10, -10, -10, 1]);
+	vPosition.push([-10, -10, 10, 1]);
+	vPosition.push([10, -10, 10, 1]);
+
+	vNormal.push([0, 1, 0, 0]);
+	vNormal.push([0, 1, 0, 0]);
+	vNormal.push([0, 1, 0, 0]);
+	vNormal.push([0, 1, 0, 0]);
+	vNormal.push([0, 1, 0, 0]);
+	vNormal.push([0, 1, 0, 0]);
+
+	vPosition.push([-10, -10, -10, 1]);
+	vPosition.push([-10, 10, -10, 1]);
+	vPosition.push([10, 10, -10, 1]);
+
+	vPosition.push([-10, -10, -10, 1]);
+	vPosition.push([10, -10, -10, 1]);
+	vPosition.push([10, 10, -10, 1]);
+
+	vNormal.push([0, 0, 1, 0]);
+	vNormal.push([0, 0, 1, 0]);
+	vNormal.push([0, 0, 1, 0]);
+	vNormal.push([0, 0, 1, 0]);
+	vNormal.push([0, 0, 1, 0]);
+	vNormal.push([0, 0, 1, 0]);
+
+	for (let i = objectLength[5]; i < vPosition.length; i++) {
+		vTexCoord.push([0, 0]);
+		materialDiffuse.push([0, 0, 0, 0]);
+		materialSpecular.push([0, 0, 0, 0]);
+	}
+	objectLength.push(vPosition.length);
+
+	// Cube Map
+	gl.activeTexture(gl.TEXTURE1);
+	gl.bindTexture(gl.TEXTURE_CUBE_MAP, gl.createTexture());
+
+	gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+	gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+	gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+	gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+
+	// Get textures
+	let links = ["", "negx", "negy", "negz", "posx", "posy", "posz"];
+	for (let i = 1; i < 7; i++) {
+		const image = new Image();
+		image.crossOrigin = "";
+		image.src = "https://web.cs.wpi.edu/~jmcuneo/cs4731/project3_2/skybox_" + links[i] + ".png";
+		image.onload = function () {
+			if (i == 1) gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_X, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image);
+			else if (i == 2) gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image);
+			else if (i == 3) gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image);
+			else if (i == 4) gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_X, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image);
+			else if (i == 5) gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_Y, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image);
+			else if (i == 6) gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_Z, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image);
+			if (!animating) render(); // Since loading images takes time, a new render is needed
+		}
+	}
 
 	shaderChange();
 }
@@ -187,7 +317,6 @@ async function parseObject(fileName: string) {
 								gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
 								gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
 								gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-								// gl.uniform1i(gl.getUniformLocation(program, "texture"), 0);
 							}
 							break;
 						default:
@@ -385,6 +514,9 @@ function shaderChange() {
 	gl.uniform4fv(gl.getUniformLocation(program, "lightSpecular"), lightSpectular);
 	gl.uniform1f(gl.getUniformLocation(program, "shininess"), 20);
 
+	gl.uniform1i(gl.getUniformLocation(program, "stopTex"), 0);
+	gl.uniform1i(gl.getUniformLocation(program, "texMap"), 1);
+
 	if (!animating) render();
 }
 
@@ -427,12 +559,27 @@ function render() {
 	mvMatrix = mult(mvMatrix, rotateY(carDegree));
 	// Draw Car and bunny
 	gl.uniformMatrix4fv(gl.getUniformLocation(program, "modelViewMatrix"), false, flatten(mvMatrix));
-	gl.drawArrays(gl.TRIANGLES, 0, objectLength[1]);
+	gl.uniformMatrix4fv(gl.getUniformLocation(program, "modelMatrix"), false, flatten(rotateY(carDegree)));
+	if (reflectionCheckbox.checked) gl.uniform1f(gl.getUniformLocation(program, "reflection"), 1);
+	else gl.uniform1f(gl.getUniformLocation(program, "reflection"), 0);
+	gl.uniform1f(gl.getUniformLocation(program, "refraction"), 0);
+	gl.drawArrays(gl.TRIANGLES, 0, objectLength[0]);
+	gl.uniform1f(gl.getUniformLocation(program, "reflection"), 0);
+	if (refractionCheckbox.checked) gl.uniform1f(gl.getUniformLocation(program, "refraction"), 1);
+	else gl.uniform1f(gl.getUniformLocation(program, "refraction"), 0);
+	gl.drawArrays(gl.TRIANGLES, objectLength[0], objectLength[1] - objectLength[0]);
+	gl.uniform1f(gl.getUniformLocation(program, "refraction"), 0);
 
 	mvMatrix = stack.pop();
 	// Draw other triangles
 	gl.uniformMatrix4fv(gl.getUniformLocation(program, "modelViewMatrix"), false, flatten(mvMatrix));
-	gl.drawArrays(gl.TRIANGLES, objectLength[1], vPosition.length - objectLength[1]);
+	gl.uniformMatrix4fv(gl.getUniformLocation(program, "modelMatrix"), false, flatten(mvMatrix));
+	gl.drawArrays(gl.TRIANGLES, objectLength[1], objectLength[5] - objectLength[1]);
+	if (skyBoxCheckbox.checked) {
+		gl.uniform1f(gl.getUniformLocation(program, "reflection"), 1);
+		gl.drawArrays(gl.TRIANGLES, objectLength[5], objectLength[6] - objectLength[5]);
+	}
+	gl.uniform1f(gl.getUniformLocation(program, "reflection"), 0);
 
 	// Draw Shadows
 	if (shadowsCheckbox.checked && lampLightCheckbox.checked) {
@@ -494,27 +641,45 @@ function render() {
 // Keyboard Shortcuts
 window.onkeypress = function (event: { key: any; }) {
 	switch (event.key) {
-		// Toggle shadows
+		// Toggle Sky Box
+		case "e":
+		case "E":
+			skyBoxCheckbox.checked = !skyBoxCheckbox.checked;
+			if (!animating) render();
+			break;
+		// Toggle Reflection
+		case "r":
+		case "R":
+			reflectionCheckbox.checked = !reflectionCheckbox.checked;
+			if (!animating) render();
+			break;
+		// Toggle Refraction
+		case "f":
+		case "F":
+			refractionCheckbox.checked = !refractionCheckbox.checked;
+			if (!animating) render();
+			break;
+		// Toggle Shadows
 		case "s":
 		case "S":
 			shadowsCheckbox.checked = !shadowsCheckbox.checked;
 			if (!animating) render();
 			break;
-		// Toggle spectator camera animation
+		// Toggle Spectator Camera Animation
 		case "a":
 		case "A":
 			camAnimationCheckbox.checked = !camAnimationCheckbox.checked;
 			carCamCheckbox.checked = false;
 			if (!animating) render();
 			break;
-		// Toggle camera position
+		// Toggle Camera Position
 		case "c":
 		case "C":
 			carCamCheckbox.checked = !carCamCheckbox.checked;
 			camAnimationCheckbox.checked = false;
 			if (!animating) render();
 			break;
-		// Toggle car animation
+		// Toggle Car Animation
 		case "m":
 		case "M":
 			carAnimationCheckbox.checked = !carAnimationCheckbox.checked;
@@ -532,7 +697,7 @@ window.onkeypress = function (event: { key: any; }) {
 			phongCheckbox.checked = !phongCheckbox.checked;
 			shaderChange();
 			break;
-		// Toggle X-ray
+		// Toggle X-Ray
 		case "x":
 		case "X":
 			invertCheckbox.checked = !invertCheckbox.checked;
@@ -554,8 +719,8 @@ window.onkeypress = function (event: { key: any; }) {
 			animationSpeed.value = "10";
 			break;
 		// Super Reset
-		case "r":
-		case "R":
+		case "g":
+		case "G":
 			(<HTMLInputElement>document.getElementById("fieldOfViewY")).value = "50";
 			(<HTMLInputElement>document.getElementById("cameraDistance")).value = "7";
 			(<HTMLInputElement>document.getElementById("perspectiveFar")).value = "30";
@@ -566,6 +731,9 @@ window.onkeypress = function (event: { key: any; }) {
 			lightAmbient = [0.1, 0.1, 0.1, 1];
 			lightDiffuse = [1, 1, 1, 1];
 			lightSpectular = [1, 1, 1, 1];
+			skyBoxCheckbox.checked = true;
+			reflectionCheckbox.checked = true;
+			refractionCheckbox.checked = true;
 			carCamCheckbox.checked = false;
 			shadowsCheckbox.checked = true;
 			camAnimationCheckbox.checked = false;

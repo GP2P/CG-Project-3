@@ -53,11 +53,14 @@
 		attribute vec4 vPosition, vNormal, materialDiffuse, materialSpecular;
 		attribute vec2 vTexCoord;
 		uniform vec4 lightPosition;
-		uniform mat4 modelViewMatrix, projectionMatrix;
+		uniform mat4 modelMatrix, modelViewMatrix, projectionMatrix;
 		varying vec3 L, N, V;
 		varying vec4 materialDiffuseF, materialSpecularF;
 		uniform bool lightOn;
+		uniform bool reflection;
+		uniform bool refraction;
 		varying vec2 vTexCoordF;
+		varying vec3 R;
 
 		void main() {
 
@@ -68,6 +71,17 @@
 				V = normalize(-pos);
 				materialSpecularF = materialSpecular;
 			}
+
+			if (reflection) {
+				R = reflect((modelMatrix * vPosition).xyz, normalize(modelMatrix * vNormal).xyz);
+				//R = reflect((modelViewMatrix * vPosition).xyz, normalize(modelViewMatrix * vNormal).xyz);
+				//R = reflect(pos, N);
+			}
+
+			if (refraction) {
+				R = refract((modelMatrix * vPosition).xyz, normalize(modelMatrix * vNormal).xyz, 0.1);
+			}
+
 			materialDiffuseF = materialDiffuse;
 
 			vTexCoordF = vTexCoord;
@@ -101,7 +115,11 @@
 		varying vec4 materialDiffuseF, materialSpecularF;
 		varying vec2 vTexCoordF;
 		uniform bool lightOn;
+		uniform bool reflection;
+		uniform bool refraction;
 		uniform sampler2D stopTex;
+		uniform samplerCube texMap;
+		varying vec3 R;
 
 		void main() {
 			vec4 fColor;
@@ -116,7 +134,15 @@
 			fColor.a = 1.0;
 
 			if (vTexCoordF == vec2(0, 0)) {
-				gl_FragColor = fColor;
+				if (reflection) {
+					gl_FragColor = fColor + textureCube(texMap, R);
+				} else if (refraction) {
+					fColor = textureCube(texMap, R);
+					fColor.a = 0.7;
+					gl_FragColor = fColor;
+				} else {
+					gl_FragColor = fColor;
+				}
 			} else if (lightOn) gl_FragColor = texture2D(stopTex, vTexCoordF);
 			else gl_FragColor = vec4(0.1, 0.1, 0.1, 1) * texture2D(stopTex, vTexCoordF);
 		}
@@ -176,23 +202,23 @@
 							       oninput="lightPosition[0] = +this.value; if (!animating) render()">
 						</label>
 						<input type="button" id="lightXReset" value="R"
-						       onclick="lightX.value=0;lightPosition[0] = +this.value; if (!animating) render()">
+						       onclick="lightX.value=0;lightPosition[0] = 0; if (!animating) render()">
 						<label>
 							Y:
 							<input type="range" id="lightY" min="-10" max="10"
 							       step="0.01" value="5"
-							       oninput="lightPosition[0] = +this.value; if (!animating) render()">
+							       oninput="lightPosition[1] = +this.value; if (!animating) render()">
 						</label>
 						<input type="button" id="lightYReset" value="R"
-						       onclick="lightY.value=5;lightPosition[0] = +this.value; if (!animating) render()">
+						       onclick="lightY.value=5;lightPosition[1] = 5; if (!animating) render()">
 						<label>
 							Z:
 							<input type="range" id="lightZ" min="-10" max="10"
 							       step="0.01" value="0"
-							       oninput="lightPosition[0] = +this.value; if (!animating) render()">
+							       oninput="lightPosition[2] = +this.value; if (!animating) render()">
 						</label>
 						<input type="button" id="lightZReset" value="R"
-						       onclick="lightZ.value=0;lightPosition[0] = +this.value; if (!animating) render()">
+						       onclick="lightZ.value=0;lightPosition[2] = 0; if (!animating) render()">
 					</p>
 					<p style="text-align: center">
 						<label>
@@ -218,6 +244,21 @@
 							<input type="checkbox" id="carAnimationCheckbox"
 							       onchange="if (!animating) render()">
 							Car Animation Mode
+						</label>
+						<label>
+							<input type="checkbox" id="skyBoxCheckbox" checked
+							       onchange="if (!animating) render();">
+							Sky Box
+						</label>
+						<label>
+							<input type="checkbox" id="reflectionCheckbox" checked
+							       onchange="if (!animating) render();">
+							Reflections
+						</label>
+						<label>
+							<input type="checkbox" id="refractionCheckbox" checked
+							       onchange="if (!animating) render();">
+							Refraction
 						</label>
 						<label>
 							<input type="checkbox" id="carCamCheckbox"
@@ -319,9 +360,39 @@
 							<th>Secondary</th>
 						</tr>
 						<tr>
-							<td>Toggle Animation</td>
+							<td>Toggle Sky Box</td>
+							<td>E</td>
+							<td>e</td>
+						</tr>
+						<tr>
+							<td>Toggle Reflection</td>
+							<td>R</td>
+							<td>r</td>
+						</tr>
+						<tr>
+							<td>Toggle Refraction</td>
+							<td>F</td>
+							<td>f</td>
+						</tr>
+						<tr>
+							<td>Toggle Shadows</td>
+							<td>S</td>
+							<td>s</td>
+						</tr>
+						<tr>
+							<td>Toggle Spectator Camera Animation</td>
+							<td>A</td>
+							<td>a</td>
+						</tr>
+						<tr>
+							<td>Toggle Camera Position</td>
 							<td>C</td>
 							<td>c</td>
+						</tr>
+						<tr>
+							<td>Toggle Car Animation</td>
+							<td>M</td>
+							<td>m</td>
 						</tr>
 						<tr>
 							<td>Toggle Lamp Light</td>
@@ -334,13 +405,18 @@
 							<td>q</td>
 						</tr>
 						<tr>
+							<td>Toggle X-Ray</td>
+							<td>X</td>
+							<td>x</td>
+						</tr>
+						<tr>
 							<td>Change Animation Speed from 1x to 10x</td>
 							<td>number 1-0</td>
 						</tr>
 						<tr>
 							<td>Super Reset</td>
-							<td>R</td>
-							<td>r</td>
+							<td>G</td>
+							<td>g</td>
 						</tr>
 					</table>
 
