@@ -81,14 +81,14 @@
 		precision mediump float;
 		varying vec4 fColor;
 		varying vec2 vTexCoordF;
-		uniform sampler2D texture;
+		uniform sampler2D stopTex;
 		uniform bool lightOn;
 
 		void main() {
 			if (vTexCoordF == vec2(0, 0)) {
 				gl_FragColor = fColor;
-			} else if (lightOn) gl_FragColor = texture2D(texture, vTexCoordF);
-			else gl_FragColor = vec4(0.3, 0.3, 0.3, 1) * texture2D(texture, vTexCoordF);
+			} else if (lightOn) gl_FragColor = texture2D(stopTex, vTexCoordF);
+			else gl_FragColor = vec4(0.1, 0.1, 0.1, 1) * texture2D(stopTex, vTexCoordF);
 		}
 	</script>
 
@@ -101,7 +101,7 @@
 		varying vec4 materialDiffuseF, materialSpecularF;
 		varying vec2 vTexCoordF;
 		uniform bool lightOn;
-		uniform sampler2D texture;
+		uniform sampler2D stopTex;
 
 		void main() {
 			vec4 fColor;
@@ -117,8 +117,8 @@
 
 			if (vTexCoordF == vec2(0, 0)) {
 				gl_FragColor = fColor;
-			} else if (lightOn) gl_FragColor = texture2D(texture, vTexCoordF);
-			else gl_FragColor = vec4(0.3, 0.3, 0.3, 1) * texture2D(texture, vTexCoordF);
+			} else if (lightOn) gl_FragColor = texture2D(stopTex, vTexCoordF);
+			else gl_FragColor = vec4(0.1, 0.1, 0.1, 1) * texture2D(stopTex, vTexCoordF);
 		}
 	</script>
 
@@ -358,10 +358,10 @@
 								<li>It contains contents similar to other .obj files</li>
 							</ul>
 						</li>
-						<li>Camera and Car animation: Animate the 3rd person camera and car at the same time</li>
-						<li>Everyone has shadows: All objects casts shadows to the ground, except for the ground
-							itself
+						<li>Camera & Car animation: Animate the 3rd person camera & car at the same time, both are
+							hierarchical
 						</li>
+						<li>Everyone has shadows: All objects casts shadows to the ground, except for the ground</li>
 						<li>Change Light Position: Change where the light is and see how the shadows change</li>
 						<li>Lighting Mode Change: Toggle between Gouraud shading and Phong shading</li>
 						<li>X-ray: Invert the colors from the .mtl files, the background and the additional object</li>

@@ -16,7 +16,7 @@ let lightPosition = [0, 5, 0, 1];
 let lightAmbient = [0.1, 0.1, 0.1, 1];
 let lightDiffuse = [1, 1, 1, 1];
 let lightSpectular = [1, 1, 1, 1];
-let stack: number[][] = [];
+let stack: number[][][] = [];
 
 // Controls
 let lightAmbientInput: HTMLInputElement;
@@ -126,10 +126,10 @@ async function readIn() {
 	offset = [0, 0, 0];
 	await parseObject("1/lamp");
 	objectLength.push(vPosition.length);
-	offset = [0, 0, -4.5];
+	offset = [-3, 0, 4.5];
 	await parseObject("1/stopsign");
 	objectLength.push(vPosition.length);
-	offset = [2, -1, -2];
+	offset = [3, -1, -3];
 	await parseMyObject();
 	objectLength.push(vPosition.length);
 	offset = [0, 0, 0];
@@ -401,27 +401,37 @@ function render() {
 		gl.uniform1f(gl.getUniformLocation(program, "lightOn"), 1);
 	else gl.uniform1f(gl.getUniformLocation(program, "lightOn"), 0);
 
-	// Spectator View Matrix
-	let cameraDistance = +(<HTMLInputElement>document.getElementById("cameraDistance")).value;
-	let sin = Math.sin(radians(camDegree));
-	let cos = Math.cos(radians(camDegree));
-	let viewMatrix = lookAt(mult(mat3(cos, 0, sin, 0, 1, 0, -sin, 0, cos),
-		[cameraDistance, variance + 5, cameraDistance]), [0, 0, 0], [0, 1, 0]);
-
 	// Projection Matrix
 	gl.uniformMatrix4fv(gl.getUniformLocation(program, "projectionMatrix"), false, flatten(perspective(
 		(<HTMLInputElement>document.getElementById("fieldOfViewY")).value, canvas.width / canvas.height, 0.1,
 		(<HTMLInputElement>document.getElementById("perspectiveFar")).value)));
 
-	// Car Animation Model Matrix
-	let modelMatrix = rotateY(carDegree);
+	let mvMatrix;
+	stack = [];
+	if (carCamCheckbox.checked) {
+		// Car View
+		// @ts-ignore
+		mvMatrix = mult(lookAt([3, 1, 0.5], [3, 1, 2], [0, 1, 0]), inverse(rotateY(carDegree)));
+	} else {
+		// Spectator View
+		let cameraDistance = +(<HTMLInputElement>document.getElementById("cameraDistance")).value;
+		let sin = Math.sin(radians(camDegree));
+		let cos = Math.cos(radians(camDegree));
+		mvMatrix = lookAt(mult(mat3(cos, 0, sin, 0, 1, 0, -sin, 0, cos),
+			[cameraDistance, variance + 5, cameraDistance]), [0, 0, 0], [0, 1, 0]);
+	}
 
+	// @ts-ignore
+	stack.push(mvMatrix);
+	// @ts-ignore
+	mvMatrix = mult(mvMatrix, rotateY(carDegree));
 	// Draw Car and bunny
-	gl.uniformMatrix4fv(gl.getUniformLocation(program, "modelViewMatrix"), false, flatten(mult(viewMatrix, modelMatrix)));
-	gl.drawArrays(gl.TRIANGLES, 0, objectLength[1])
+	gl.uniformMatrix4fv(gl.getUniformLocation(program, "modelViewMatrix"), false, flatten(mvMatrix));
+	gl.drawArrays(gl.TRIANGLES, 0, objectLength[1]);
 
+	mvMatrix = stack.pop();
 	// Draw other triangles
-	gl.uniformMatrix4fv(gl.getUniformLocation(program, "modelViewMatrix"), false, flatten(viewMatrix));
+	gl.uniformMatrix4fv(gl.getUniformLocation(program, "modelViewMatrix"), false, flatten(mvMatrix));
 	gl.drawArrays(gl.TRIANGLES, objectLength[1], vPosition.length - objectLength[1]);
 
 	// Draw Shadows
@@ -433,11 +443,11 @@ function render() {
 		gl.uniform1f(gl.getUniformLocation(program, "lightOn"), 0);
 
 		// Shadows of Car and bunny
-		gl.uniformMatrix4fv(gl.getUniformLocation(program, "modelViewMatrix"), false, flatten(mult(viewMatrix, mult(shadowModelMatrix, rotateY(carDegree)))));
+		gl.uniformMatrix4fv(gl.getUniformLocation(program, "modelViewMatrix"), false, flatten(mult(mvMatrix, mult(shadowModelMatrix, rotateY(carDegree)))));
 		gl.drawArrays(gl.TRIANGLES, 0, objectLength[1]);
 
-		// Shadows of Other triangles
-		gl.uniformMatrix4fv(gl.getUniformLocation(program, "modelViewMatrix"), false, flatten(mult(viewMatrix, shadowModelMatrix)));
+		// Shadows of Other triangles except for ground
+		gl.uniformMatrix4fv(gl.getUniformLocation(program, "modelViewMatrix"), false, flatten(mult(mvMatrix, shadowModelMatrix)));
 		gl.drawArrays(gl.TRIANGLES, objectLength[1], objectLength[4] - objectLength[1]);
 	}
 
